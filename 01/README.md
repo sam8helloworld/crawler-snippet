@@ -1,20 +1,37 @@
 ## Get Starting
 README.mdファイルがあるディレクトリで全てのコマンドは実行してください。
 
+pythonの仮想環境を作ります。目的はpythonのライブラリをPCのグローバルな環境にインストールするのではなく、一時的なサンドボックスにインストールするためです。
+```
+python3 -m venv venv
+source venv/bin/activate
+```
+
+仮想環境が有効化された状態で以下のコマンドで関連ライブラリをインストールします。
 ```
 pip3 install -r requirements.txt
 ```
 
-```
-# ベーキングペーパーのスクリプト同時実行
-python3 cmd_baking_paper_askul.py & python3 cmd_baking_paper_monotaro.py & python3 cmd_baking_paper_tanomail.py & python3 cmd_baking_paper_kaunet.py　& wait
+以下のスクリプトを実行するとそれぞれダンボール・ベーキングペーパー・緩衝材のスクレイピングとcsvの出力が行われます。
 
+```
 # ダンボールのスクリプト同時実行
 python3 cmd_card_board_askul.py & python3 cmd_card_board_monotaro.py & python3 cmd_card_board_tanomail.py & python3 cmd_card_board_kaunet.py & wait
+
+# ベーキングペーパーのスクリプト同時実行
+python3 cmd_baking_paper_askul.py & python3 cmd_baking_paper_monotaro.py & python3 cmd_baking_paper_tanomail.py & python3 cmd_baking_paper_kaunet.py　& wait
 
 # 緩衝材のスクリプト同時実行
 python3 cmd_cushioning_package_askul.py & python3 cmd_cushioning_package_monotaro.py & python3 cmd_cushioning_package_tanomail.py & python3 cmd_cushioning_package_kaunet.py & wait
 ```
+
+※ もし「たのめーる」のダンボールのcsvのみ出力したい、という場合
+
+```
+python3 cmd_card_board_tanomail.py
+```
+
+のようにコマンドを個別に実行可能です。
 
 ## python環境構築
 https://prog-8.com/docs/python-env
