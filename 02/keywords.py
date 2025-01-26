@@ -1,0 +1,7 @@
+SITE_BASE_URL = "https://jp.shein.com"
+
+PROJECTOR_BASE_URL = "https://jp.shein.com/pdsearch/%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%82%BF%E3%83%BC/?ici=s1%60EditSearch%60%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%82%BF%E3%83%BC%60_fb%60d0%60PageHome&search_source=1&search_type=all&source=sort&src_identifier=st%3D2%60sc%3D%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%82%BF%E3%83%BC%60sr%3D0%60ps%3D1&src_module=search&src_tab_page_id=page_home1737861475186&sort=11&sourceStatus=1&force_suggest=1&page={}"
+
+KARAOKE_BASE_URL = "https://jp.shein.com/pdsearch/%E3%82%AB%E3%83%A9%E3%82%AA%E3%82%B1/?ici=s1%60EditSearch%60%E3%82%AB%E3%83%A9%E3%82%AA%E3%82%B1%60_fb%60d0%60PageHome&search_source=1&search_type=all&source=sort&src_identifier=st%3D2%60sc%3D%E3%82%AB%E3%83%A9%E3%82%AA%E3%82%B1%60sr%3D0%60ps%3D1&src_module=search&src_tab_page_id=page_home1737826172400&sort=11&sourceStatus=1&force_suggest=1&page={}"
+
+MOBILE_MONITOR_BASE_URL = "https://jp.shein.com/pdsearch/%E3%83%A2%E3%83%90%E3%82%A4%E3%83%AB%E3%83%A2%E3%83%8B%E3%82%BF%E3%83%BC/?ici=s1%60EditSearch%60%E3%83%A2%E3%83%90%E3%82%A4%E3%83%AB%E3%83%A2%E3%83%8B%E3%82%BF%E3%83%BC%60_fb%60d0%60PageSearchResult&search_source=1&search_type=all&source=sort&src_identifier=st%3D2%60sc%3D%E3%83%A2%E3%83%90%E3%82%A4%E3%83%AB%E3%83%A2%E3%83%8B%E3%82%BF%E3%83%BC%60sr%3D0%60ps%3D1&src_module=search&src_tab_page_id=page_search1737827832437&sort=11&sourceStatus=1&force_suggest=1&page={}"
