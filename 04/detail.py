@@ -47,7 +47,9 @@ class JobDetail:
         return dataclasses.asdict(self)
 
 
-def fetch_page_source(url: str, cookies: Optional[Dict[str, str]] = None) -> Optional[JobDetail]:
+def fetch_page_source(
+    url: str, cookies: Optional[Dict[str, str]] = None
+) -> Optional[JobDetail]:
     """指定したURLの求人情報を取得し、解析してJobDetailオブジェクトを返す"""
     headers = {"User-Agent": "Mozilla/5.0"}
 
@@ -66,11 +68,27 @@ def fetch_page_source(url: str, cookies: Optional[Dict[str, str]] = None) -> Opt
 
     # 各カテゴリの情報取得
     try:
-        company_details = extract_table_data(soup, 2, ["ホームページ", "本社所在地", "設立年月日", "従業員数", "会社の特徴"])
-        job_details = extract_table_data(soup, 1, ["仕事内容", "福利厚生", "受動喫煙対策", "休日休暇", "選考内容"])
-        agent_details = extract_table_data(soup, 0, [
-            "性別", "外国籍の必要資格・経験", "成功報酬条件", "理論年収の定義", "返金規定（紹介手数料）", "面接お見送り理由", "その他備考"
-        ])
+        company_details = extract_table_data(
+            soup,
+            2,
+            ["ホームページ", "本社所在地", "設立年月日", "従業員数", "会社の特徴"],
+        )
+        job_details = extract_table_data(
+            soup, 1, ["仕事内容", "福利厚生", "受動喫煙対策", "休日休暇", "選考内容"]
+        )
+        agent_details = extract_table_data(
+            soup,
+            0,
+            [
+                "性別",
+                "外国籍の必要資格・経験",
+                "成功報酬条件",
+                "理論年収の定義",
+                "返金規定（紹介手数料）",
+                "面接お見送り理由",
+                "その他備考",
+            ],
+        )
     except Exception as e:
         logger.error(f"[ERROR] テーブルデータの取得に失敗: {url} - {e}")
         return None
@@ -78,11 +96,17 @@ def fetch_page_source(url: str, cookies: Optional[Dict[str, str]] = None) -> Opt
     # その他の情報取得
     try:
         holidays_count = extract_holidays(job_details.get("休日休暇", ""))
-        casual_interview = "カジュアル面談の有無 : 状況に応じてある" in job_details.get("選考内容", "")
+        casual_interview = "カジュアル面談の有無 : 状況に応じてある" in job_details.get(
+            "選考内容", ""
+        )
         company_briefing = "会社説明会の有無: あり" in job_details.get("選考内容", "")
         aptitude_test = "適性テストの有無: あり" in job_details.get("選考内容", "")
         reproduce_prohibit = "転載禁止" in agent_details.get("その他備考", "")
-        posted_date = soup.select_one(".posted-date").text if soup.select_one(".posted-date") else ""
+        posted_date = (
+            soup.select_one(".posted-date").text
+            if soup.select_one(".posted-date")
+            else ""
+        )
     except Exception as e:
         logger.error(f"[ERROR] 追加情報の解析に失敗: {url} - {e}")
         return None
@@ -128,11 +152,13 @@ def fetch_page_source(url: str, cookies: Optional[Dict[str, str]] = None) -> Opt
     )
 
 
-def extract_table_data(soup: BeautifulSoup, index: int, keys: List[str]) -> Dict[str, str]:
+def extract_table_data(
+    soup: BeautifulSoup, index: int, keys: List[str]
+) -> Dict[str, str]:
     """指定したインデックスのテーブルからデータを抽出"""
     details = defaultdict(str)
     tables = soup.find_all("table", class_="table table-hover")
-    
+
     if len(tables) > index:
         for row in tables[index].find_all("tr"):
             header = row.find("th")
@@ -182,7 +208,7 @@ if __name__ == "__main__":
 
     job_details: List[Record] = []
     for index, row in df.iterrows():
-        if index == args.max:
+        if index == args.max and args.max is not None:
             break
         print(f"{index+1}個目処理中....")
         job_detail = fetch_page_source(row["link"], cookies)
