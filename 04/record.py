@@ -1,0 +1,65 @@
+import dataclasses
+from datetime import datetime
+
+@dataclasses.dataclass
+class Record:
+    link: str
+    title: str
+    detail_fetched: bool
+    company_name: str
+    company_url: str
+    industry: str
+    category: str
+    salary_range: str
+    work_location: str
+    application_qualifications: str
+    job_description: str
+    screening_speed: str
+    planned_hires: str
+    pass_rate: str
+    age_requirement_min: int
+    age_requirement_max: int
+    gender_requirement: str
+    nationality_requirement: str
+    requirement_tags: str
+    created_at: datetime
+    updated_at: datetime
+    position_details: str
+    position_level: str
+    establishment_year: str
+    company_phase: str
+    employees_count: str
+    listing_status: str
+    company_address: str
+    holidays_count: str
+    regular_holidays: str
+    benefits: str
+    smoking_measures: str
+    casual_interview: bool
+    company_briefing: str
+    aptitude_test: bool
+    selection_flow: str
+    fee_text: str
+    success_point: str
+    payment_terms: str
+    refund_policy: str
+    theoretical_salary_policy: str
+    body: str
+    reproduce_prohibit: bool
+    handling_agency: str
+    posted_date: str
+    pr_points: str
+    organization_structure: str
+    document_rejection_reasons: str
+    high_likelihood_hire: str
+    interview_rejection_reasons: str
+    agent_info_document_points: str
+    agent_info_interview_first: str
+    agent_info_interview_final: str
+    body_text: str
+    job_status: str
+    rubric: str
+    body_format: str
+
+    def to_json(self) -> dict:
+        return dataclasses.asdict(self)

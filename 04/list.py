@@ -5,6 +5,12 @@ from typing import List, Dict, Optional
 import re
 import pandas as pd
 import argparse
+import logging
+
+# ログ設定
+logging.basicConfig(
+    level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 @dataclasses.dataclass
@@ -31,46 +37,73 @@ def fetch_page_source(
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
     }
+    try:
+        response = session.get(url, headers=headers, cookies=cookies)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
 
-    response = session.get(url, headers=headers, cookies=cookies)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, "html.parser")
+        content = soup.select("#content")
+        if len(content) < 2:
+            logging.error(f"[ERROR] 'content' セクションが見つかりません: {url}")
+            return []
 
-    content = soup.select("#content")[1]
-    if not content:
+        jobs_content = content[1].select(".panel-body")
+        return [extract_job_details(job_content) for job_content in jobs_content]
+    except Exception as e:
+        logging.error(f"[ERROR] ページの取得に失敗: {url} - {e}")
         return []
-
-    jobs_content = content.select(".panel-body")
-    return [extract_job_details(job_content) for job_content in jobs_content]
 
 
 def extract_job_details(job_content) -> Job:
     """求人情報を解析し、Job オブジェクトを作成する。"""
-    title = job_content.select_one(".job_detail_h3").text
-    link = job_content.select_one(".job_detail_h3 > a").get("href", "")
+    try:
+        title = job_content.select_one(".job_detail_h3").text.strip()
+        link = job_content.select_one(".job_detail_h3 > a").get("href", "")
+    except Exception as e:
+        logging.error(f"[ERROR] タイトルまたはリンクの取得に失敗: {e}")
+        title, link = "", ""
 
     job_details = {}
-    table = job_content.find("table", {"id": "job_detail_table"})
-    if table:
-        for row in table.find_all("tr"):
-            header = row.find("th")
-            value = row.find("td")
-            if header and value:
-                key = header.get_text(strip=True)
-                val = value.get_text(" ", strip=True)
-                job_details[key] = val
+    try:
+        table = job_content.find("table", {"id": "job_detail_table"})
+        if table:
+            for row in table.find_all("tr"):
+                header = row.find("th")
+                value = row.find("td")
+                if header and value:
+                    key = header.get_text(strip=True)
+                    val = value.get_text(" ", strip=True)
+                    job_details[key] = val
+    except Exception as e:
+        logging.error(f"[ERROR] 詳細テーブルの解析に失敗: {e}")
 
-    company_name = job_details.get("企業名", "")
-    industry = job_details.get("業界", "")
-    salary_range = job_details.get("年収", "")
-    work_location = job_details.get("想定勤務地詳細", "")
-    application_qualifications = job_details.get("応募資格", "")
-    planned_hires = job_details.get("募集人数", "")
-    age = job_details.get("年齢", "")
+    try:
+        company_name = job_details.get("企業名", "")
+        industry = job_details.get("業界", "")
+        salary_range = job_details.get("年収", "")
+        work_location = job_details.get("想定勤務地詳細", "")
+        application_qualifications = job_details.get("応募資格", "")
+        planned_hires = job_details.get("募集人数", "")
+        age = job_details.get("年齢", "")
+    except Exception as e:
+        logging.error(f"[ERROR] 求人情報の取得に失敗: {e}")
+        (
+            company_name,
+            industry,
+            salary_range,
+            work_location,
+            application_qualifications,
+            planned_hires,
+            age,
+        ) = ("", "", "", "", "", "", "")
 
-    numbers = list(map(int, re.findall(r"[0-9０-９]+", age)))
-    age_requirement_min = min(numbers) if numbers else 0
-    age_requirement_max = max(numbers) if numbers else 0
+    try:
+        numbers = list(map(int, re.findall(r"[0-9０-９]+", age)))
+        age_requirement_min = min(numbers) if numbers else 0
+        age_requirement_max = max(numbers) if numbers else 0
+    except Exception as e:
+        logging.error(f"[ERROR] 年齢情報の解析に失敗: {e}")
+        age_requirement_min, age_requirement_max = 0, 0
 
     return Job(
         title=title,
@@ -99,8 +132,12 @@ def parse_cookies(cookie_str: str) -> Dict[str, str]:
 def main():
     """メイン処理"""
     parser = argparse.ArgumentParser(description="Job Scraper Script")
-    parser.add_argument("-p", "--page_max", type=int, required=True, help="Page Max Num")
-    parser.add_argument("-c", "--cookie", type=str, help="Session Cookie")
+    parser.add_argument(
+        "-p", "--page_max", type=int, required=True, help="Page Max Num"
+    )
+    parser.add_argument(
+        "-c", "--cookie", type=str, required=True, help="Session Cookie"
+    )
 
     args = parser.parse_args()
     page_max = args.page_max

@@ -1,155 +1,38 @@
+import argparse
+import logging
 import psycopg2
-from psycopg2 import sql
+from psycopg2 import sql, OperationalError, DatabaseError
 import pandas as pd
 import dataclasses
-from datetime import datetime
-import sys
 from typing import List
+from record import Record
 
+# ログの設定
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-@dataclasses.dataclass
-class Record:
-    detail_fetched: str
-    link: str
-    title: str
-    company_name: str
-    company_url: str
-    industry: str
-    category: str
-    salary_range: str
-    work_location: str
-    application_qualifications: str
-    job_description: str
-    screening_speed: str
-    planned_hires: str
-    pass_rate: str
-    age_requirement_min: str
-    age_requirement_max: str
-    gender_requirement: str
-    nationality_requirement: str
-    requirement_tags: str
-    created_at: datetime
-    updated_at: datetime
-    position_details: str
-    position_level: str
-    establishment_year: str
-    company_phase: str
-    employees_count: str
-    listing_status: str
-    company_address: str
-    holidays_count: str
-    regular_holidays: str
-    benefits: str
-    smoking_measures: str
-    casual_interview: str
-    company_briefing: str
-    aptitude_test: str
-    selection_flow: str
-    fee_text: str
-    success_point: str
-    payment_terms: str
-    refund_policy: str
-    theoretical_salary_policy: str
-    body: str
-    reproduce_prohibit: str
-    handling_agency: str
-    posted_date: str
-    pr_points: str
-    organization_structure: str
-    document_rejection_reasons: str
-    high_likelihood_hire: str
-    interview_rejection_reasons: str
-    agent_info_document_points: str
-    agent_info_interview_first: str
-    agent_info_interview_final: str
-    body_text: str
-    job_status: str
-    rubric: str
-    body_format: str
+def insert_jobs_from_csv(csv_file: str, db_params: dict):
+    try:
+        logging.info(f"CSVファイル {csv_file} を読み込み中...")
+        df = pd.read_csv(csv_file)
+    except Exception as e:
+        logging.error(f"CSVファイルの読み込みに失敗しました: {e}")
+        return
 
+    try:
+        records = [Record(**row.to_dict()) for _, row in df.iterrows()]
+        logging.info(f"{len(records)} 件のレコードを処理します。")
+        insert_jobs_in_bulk(records, db_params)
+    except Exception as e:
+        logging.error(f"レコード処理中にエラーが発生しました: {e}")
 
-def insert_jobs_from_csv(csv_file: str):
-    # CSVファイルをpandasで読み込み
-    df = pd.read_csv(csv_file)
-
-    # レコードをList[Record]に変換
-    records = []
-    for _, row in df.iterrows():
-        record = Record(
-            detail_fetched=row["detail_fetched"],
-            link=row["link"],
-            title=row["title"],
-            company_name=row["company_name"],
-            company_url=row["company_url"],
-            industry=row["industry"],
-            category=row["category"],
-            salary_range=row["salary_range"],
-            work_location=row["work_location"],
-            application_qualifications=row["application_qualifications"],
-            job_description=row["job_description"],
-            screening_speed=row["screening_speed"],
-            planned_hires=row["planned_hires"],
-            pass_rate=row["pass_rate"],
-            age_requirement_min=row["age_requirement_min"],
-            age_requirement_max=row["age_requirement_max"],
-            gender_requirement=row["gender_requirement"],
-            nationality_requirement=row["nationality_requirement"],
-            requirement_tags=row["requirement_tags"],
-            created_at=pd.to_datetime(row["created_at"]),
-            updated_at=pd.to_datetime(row["updated_at"]),
-            position_details=row["position_details"],
-            position_level=row["position_level"],
-            establishment_year=row["establishment_year"],
-            company_phase=row["company_phase"],
-            employees_count=row["employees_count"],
-            listing_status=row["listing_status"],
-            company_address=row["company_address"],
-            holidays_count=row["holidays_count"],
-            regular_holidays=row["regular_holidays"],
-            benefits=row["benefits"],
-            smoking_measures=row["smoking_measures"],
-            casual_interview=row["casual_interview"],
-            company_briefing=row["company_briefing"],
-            aptitude_test=row["aptitude_test"],
-            selection_flow=row["selection_flow"],
-            fee_text=row["fee_text"],
-            success_point=row["success_point"],
-            payment_terms=row["payment_terms"],
-            refund_policy=row["refund_policy"],
-            theoretical_salary_policy=row["theoretical_salary_policy"],
-            body=row["body"],
-            reproduce_prohibit=row["reproduce_prohibit"],
-            handling_agency=row["handling_agency"],
-            posted_date=row["posted_date"],
-            pr_points=row["pr_points"],
-            organization_structure=row["organization_structure"],
-            document_rejection_reasons=row["document_rejection_reasons"],
-            high_likelihood_hire=row["high_likelihood_hire"],
-            interview_rejection_reasons=row["interview_rejection_reasons"],
-            agent_info_document_points=row["agent_info_document_points"],
-            agent_info_interview_first=row["agent_info_interview_first"],
-            agent_info_interview_final=row["agent_info_interview_final"],
-            body_text=row["body_text"],
-            job_status=row["job_status"],
-            rubric=row["rubric"],
-            body_format=row["body_format"],
-        )
-        records.append(record)
-
-    # レコードを500行ごとにバルクインサート
-    insert_jobs_in_bulk(records)
-
-
-def insert_jobs_in_bulk(records: List[Record]):
-    conn = psycopg2.connect(
-        dbname="mydatabase",
-        user="myuser",  # ユーザー名
-        password="mypassword",  # パスワード
-        host="localhost",  # ホスト
-        port="5432",  # ポート
-    )
-
-    cur = conn.cursor()
+def insert_jobs_in_bulk(records: List[Record], db_params: dict):
+    try:
+        logging.info("データベースに接続中...")
+        conn = psycopg2.connect(**db_params)
+        cur = conn.cursor()
+    except OperationalError as e:
+        logging.error(f"データベースへの接続に失敗しました: {e}")
+        return
 
     query = sql.SQL(
         """
@@ -179,24 +62,45 @@ def insert_jobs_in_bulk(records: List[Record]):
             %(high_likelihood_hire)s, %(interview_rejection_reasons)s, %(agent_info_document_points)s, 
             %(agent_info_interview_first)s, %(agent_info_interview_final)s, %(body_text)s, %(job_status)s, %(rubric)s, %(body_format)s
         );
-    """
+        """
     )
 
-    # 500行ごとにバルクインサート
     batch_size = 500
-    for i in range(0, len(records), batch_size):
-        batch = records[i : i + batch_size]
-        data = [dataclasses.asdict(record) for record in batch]
-        cur.executemany(query, data)
+    try:
+        for i in range(0, len(records), batch_size):
+            batch = records[i : i + batch_size]
+            data = [dataclasses.asdict(record) for record in batch]
+            cur.executemany(query, data)
+            logging.info(f"{len(data)} 件のレコードを挿入しました。")
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        conn.commit()
+        logging.info("すべてのレコードを正常にコミットしました。")
+    except DatabaseError as e:
+        logging.error(f"データベース処理中にエラーが発生しました: {e}")
+        conn.rollback()
+        logging.info("トランザクションをロールバックしました。")
+    finally:
+        cur.close()
+        conn.close()
+        logging.info("データベース接続を閉じました。")
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Insert job records from CSV into PostgreSQL.")
+    parser.add_argument("-f", "--file", required=True, help="Path to the CSV file")
+    parser.add_argument("--dbname", required=True, help="Database name")
+    parser.add_argument("--user", required=True, help="Database user")
+    parser.add_argument("--password", required=True, help="Database password")
+    parser.add_argument("--host", required=True, default="localhost", help="Database host (default: localhost)")
+    parser.add_argument("--port", required=True, default="5432", help="Database port (default: 5432)")
 
-# コマンドライン引数を取得
-if len(sys.argv) < 2:
-    print("Usage: python script.py <csv_file>")
-else:
-    csv_file = sys.argv[1]
-    insert_jobs_from_csv(csv_file)
+    args = parser.parse_args()
+
+    db_params = {
+        "dbname": args.dbname,
+        "user": args.user,
+        "password": args.password,
+        "host": args.host,
+        "port": args.port,
+    }
+
+    insert_jobs_from_csv(args.file, db_params)
