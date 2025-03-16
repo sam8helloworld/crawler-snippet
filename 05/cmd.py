@@ -1,15 +1,14 @@
 import argparse
 
 from chat_gpt_automation import ChatGPTAutomation
-from webdriver_manager.chrome import ChromeDriverManager
-
-BASE_URL="https://chatgpt.com/"
+import chromedriver_autoinstaller
 
 def main():
     parser = argparse.ArgumentParser(description="Process a text file with optional settings.")
+    parser.add_argument("--model", default="gpt-4o", help="AI model")
+    parser.add_argument("--research", action="store_true", default=False, help="Using deep Reasearch.")
     parser.add_argument("--file", required=True, help="Path to the text file")
     parser.add_argument("--md", action="store_true", help="Output in Markdown format")
-    parser.add_argument("--mode", choices=["research", "infer", "normal"], default="normal", help="Execution mode")
     parser.add_argument("--chatid", help="Chat ID")
     
     args = parser.parse_args()
@@ -23,44 +22,35 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         return
-    
-    if args.md:
-        print(f"Mode: {args.md}")
-    
-    print(f"Mode: {args.mode}")
-    if args.chatid:
-        print(f"Chat ID: {args.chatid}")
-    print("Content:")
-    print(content)
-    
-    
-    # 最新の chromedriver を自動インストールし、パスを取得
-    chrome_driver_path = ChromeDriverManager().install()
 
-    # Define the path where the chrome driver is installed on your computer
-    # chrome_driver_path = r"/usr/local/bin/chromedriver"
+    chrome_driver_path = chromedriver_autoinstaller.install()
 
-    # the sintax r'"..."' is required because the space in "Program Files" in the chrome path
     chrome_path = r'"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"'
 
-    # Create an instance
-    chatgpt = ChatGPTAutomation(chrome_path, chrome_driver_path, args.chatid)
+    chatgpt = ChatGPTAutomation(chrome_path, chrome_driver_path, args.model, args.chatid)
+    
+    # Deep Researchのオンオフを設定する
+    if args.research:
+        chatgpt.toggle_deep_research()
+        print("Deep ResearchをONにしました")
+    
+    is_new_chat = True if args.chatid is None else False
+    chatgpt.send_prompt(content, is_new_chat)
 
-    chatgpt.send_prompt_to_chatgpt(content)
-
-    # Retrieve the last response from ChatGPT
-    response = chatgpt.return_last_response()
-    print(response)
-
-    # Save the conversation to a text file
-    file_name = "conversation.txt"
-    chatgpt.save_conversation(file_name)
+    # # Retrieve the last response from ChatGPT
+    if args.md:
+        response = chatgpt.return_last_response_markdown()
+        print(response)
+    else:    
+        response = chatgpt.return_last_response()
+        print(response)
+    
+    if args.chatid is None:
+        chat_id = chatgpt.get_chat_id()
+        print(f"生成されたチャットID: {chat_id}")
 
     # Close the browser and terminate the WebDriver session
-    # chatgpt.quit()
-
-
-    
+    chatgpt.quit()
 
 if __name__ == "__main__":
     main()
